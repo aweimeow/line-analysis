@@ -33,7 +33,7 @@ def line_type(line):
 
     join = re.match('(\d{2}:\d{2})\t(.*)加入聊天', line)
     if join:
-        dic = {'date': '', 'time': join.group(1), 'name': join.group(2)}
+        dic = {'time': join.group(1), 'name': join.group(2)}
         return ('join', dic)
 
     title = re.match('\ufeff\[LINE\] (.*)的聊天記錄', line)
@@ -55,6 +55,7 @@ def load_file(fname):
     date = None
     who = str()
     namelog = dict()
+    joinbydate = dict()
     with open(fname, 'r') as f:
         for line in f:
             linetype = line_type(line)
@@ -72,11 +73,18 @@ def load_file(fname):
 
             if linetype[0] == 'multiline':
                 dic['content'] += linetype[1]
+                continue
 
             if linetype[0] == 'datestamp':
                 date = (linetype[1], linetype[2])
                 continue
 
+            if linetype[0] == 'join':
+                if not date[0] in joinbydate:
+                    joinbydate[date[0]] = list()
+                joinbydate[date[0]].append(linetype[1])
+
+    print(joinbydate)
     print(namelog)
 
 if __name__ == '__main__':

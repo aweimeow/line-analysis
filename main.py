@@ -59,7 +59,6 @@ def load_file(fname):
     with open(fname, 'r') as f:
         for line in f:
             linetype = line_type(line)
-            print(linetype)
 
             if linetype[0] == 'content':
                 dic = linetype[1]
@@ -84,8 +83,22 @@ def load_file(fname):
                     joinbydate[date[0]] = list()
                 joinbydate[date[0]].append(linetype[1])
 
-    print(joinbydate)
-    print(namelog)
+    #print(joinbydate)
+    #print(namelog)
+    sortpercent(namelog)
+
+def sortpercent(namelog):
+    name_rate_d = dict()
+    chat_count = 0
+    for name in namelog:
+        name_rate_d[name] = {'rate': 0, 'count': len(namelog[name])}
+        chat_count += len(namelog[name])
+
+    for name in name_rate_d:
+        name_rate_d[name]['rate'] = '%2.2f%%' % (
+        name_rate_d[name]['count'] / chat_count * 100 )
+
+    print(name_rate_d)
 
 if __name__ == '__main__':
     load_file('chat_tmp.txt')

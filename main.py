@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import re
-
+import sys
 
 def line_type(line):
     """    
@@ -83,9 +83,7 @@ def load_file(fname):
                     joinbydate[date[0]] = list()
                 joinbydate[date[0]].append(linetype[1])
 
-    #print(joinbydate)
-    #print(namelog)
-    sortpercent(namelog)
+    return namelog
 
 def sortpercent(namelog):
     name_rate_d = dict()
@@ -98,7 +96,31 @@ def sortpercent(namelog):
         name_rate_d[name]['rate'] = '%2.2f%%' % (
         name_rate_d[name]['count'] / chat_count * 100 )
 
-    print(name_rate_d)
+    return name_rate_d
+
+def sort(name_rate_d):
+    sort_d = sorted(name_rate_d.items(), key=lambda x: x[1]['count'])
+    sort_d.reverse()
+    return sort_d
+
+def output(sort_d):
+    for item in sort_d:
+        namelen = 0
+        for i in item[0]:
+            if re.match('[a-zA-Z0-9!@#$%^&*()]', i):
+                namelen += 1
+            else:
+                namelen += 2
+        namelen = namelen // 2
+        print('%s' % item[0] + '\t' * ((15-namelen) // 4), end='')
+        print('%s\t%s' % (item[1]['count'], item[1]['rate']))
+
+def main():
+    fname = sys.argv[1]
+    namelog = load_file(fname)
+    name_rate_d = sortpercent(namelog)
+    sort_d = sort(name_rate_d)
+    output(sort_d)
 
 if __name__ == '__main__':
-    load_file('chat_tmp.txt')
+    main()

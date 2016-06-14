@@ -3,6 +3,7 @@
 
 import re
 import sys
+import jieba
 
 def line_type(line):
     """    
@@ -51,6 +52,7 @@ def line_type(line):
     
 
 def load_file(fname):
+    """ parsing log file """
     dic = None
     date = None
     who = str()
@@ -103,7 +105,7 @@ def sort(name_rate_d):
     sort_d.reverse()
     return sort_d
 
-def output(sort_d):
+def output_sort(sort_d):
     for item in sort_d:
         namelen = 0
         for i in item[0]:
@@ -114,13 +116,34 @@ def output(sort_d):
         namelen = namelen // 2
         print('%s' % item[0] + '\t' * ((15-namelen) // 4), end='')
         print('%s\t%s' % (item[1]['count'], item[1]['rate']))
+    print(len(sort_d))
+
+def pre_load_name(name_l):
+    for name in name_l:
+        jieba.add_word(name)
+
+def analysis_word(talks):
+    ret_d = dict()
+    for talk in talks:
+        seg = jieba.cut(talk, cut_all=False)
+        for word in set(seg):
+            if not word in ret_d:
+                ret_d[word] = 0
+            ret_d[word] += 1
+
+    return ret_d
 
 def main():
+    """
+    fname: file name
+    namelog: parse log file
+    namelist: enhance name
+    """
     fname = sys.argv[1]
     namelog = load_file(fname)
     name_rate_d = sortpercent(namelog)
     sort_d = sort(name_rate_d)
-    output(sort_d)
+    output_sort(sort_d)
 
 if __name__ == '__main__':
     main()

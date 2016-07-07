@@ -3,7 +3,11 @@
 
 import re
 import sys
+import json
+import code
 import jieba
+
+from models import Content, Invite
 
 def line_type(line):
     """    
@@ -16,21 +20,25 @@ def line_type(line):
     title: Group's name
     savedate: the date user saved log
     """
-    content = re.match('(\d{2}:\d{2})\t(.*)\t(.*)', line)
-    if content:
-        dic = {'date': '', 'time': content.group(1), 
-                'name': content.group(2), 'content': content.group(3)}
-        return ('content', dic)
+    content_r = re.match('(\d{2}:\d{2})\t(.*?)\t(.*?)', line)
+    if content_r:
+        time = content_r.group(1)
+        name = content_r.group(2)
+        text = content_r.group(3)
+        content = Content(time, name, text)
+        return content
 
-    datestamp = re.match('^(\d{4}\/\d{2}\/\d{2})\((週.)\)', line)
-    if datestamp:
-        return('datestamp', datestamp.group(1), datestamp.group(2))
+    datestamp_r = re.match('^(\d{4}\/\d{2}\/\d{2})\((週.)\)', line)
+    if datestamp_r:
+        return('datestamp', datestamp_r.group(1), datestamp_r.group(2))
 
-    invite = re.match('(\d{2}:\d{2})\t(.*)邀請(.*)加入群組。', line)
+    invite_r = re.match('(\d{2}:\d{2})\t(.*)邀請(.*)加入群組。', line)
     if invite:
-        dic = {'date': '', 'time': invite.group(1), 
-                'inviter': invite.group(2), 'target': invite.group(3)}
-        return ('invite', dic)
+        time = invite_r.group(1)
+        inviter = invite_r.group(2)
+        invitee = invite_r.group(3)
+        invite = Invite(time, inviter, invitee)
+        return invite
 
     join = re.match('(\d{2}:\d{2})\t(.*)加入聊天', line)
     if join:
@@ -118,11 +126,15 @@ def output_sort(sort_d):
         print('%s\t%s' % (item[1]['count'], item[1]['rate']))
     print(len(sort_d))
 
+def load_json(fname):
+    f = open(fname, 'r')
+    return json.loads(f.read())
+
 def pre_load_name(name_l):
     for name in name_l:
         jieba.add_word(name)
 
-def analysis_word(talks):
+def cut_word(talks):
     ret_d = dict()
     for talk in talks:
         seg = jieba.cut(talk, cut_all=False)
@@ -131,7 +143,21 @@ def analysis_word(talks):
                 ret_d[word] = 0
             ret_d[word] += 1
 
+    empty_keys = [k for k, v in ret_d.items() if v < 10]
+    for k in empty_keys:
+        del ret_d[k]
+
     return ret_d
+
+def analysis_word(namelog):
+    name_word_feq = dict()
+    for name in namelog:
+        print("cutting: %s" % name)
+        talks = [t['content'] for t in namelog[name]]
+        talks = cut_word(talks)
+        name_word_feq[name] = talks
+
+    return name_word_feq
 
 def main():
     """
@@ -140,10 +166,18 @@ def main():
     namelist: enhance name
     """
     fname = sys.argv[1]
+    #namelist = sys.argv[2]
+
+    # Sorting Rank
     namelog = load_file(fname)
     name_rate_d = sortpercent(namelog)
     sort_d = sort(name_rate_d)
     output_sort(sort_d)
+
+    # Analysis word
+    #pre_load_name(load_json(namelist))
+    #name_word_feq = analysis_word(namelog)
+    #code.interact(local=locals())
 
 if __name__ == '__main__':
     main()

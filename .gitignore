@@ -63,3 +63,9 @@ target/
 
 # Test namelist
 namelist
+
+# vim temp
+.*.py.swp
+
+# chat log
+*.txt
